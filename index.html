@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Space Mission Control Dashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #030303;
+        color: #e0e0e0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        overflow-x: hidden;
+        min-height: 100vh;
+        transition: background 0.3s, color 0.3s;
+      }
+      .high-contrast,
+      .high-contrast .dashboard-panel,
+      .high-contrast .control-panel {
+        background: #000 !important;
+        color: #fff !important;
+        border-color: #fff !important;
+      }
+      /* Milky Way Background */
+      .milky-way-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(
+            ellipse at center,
+            rgba(30, 30, 60, 0.2) 0%,
+            rgba(0, 0, 0, 0) 70%
+          ),
+          radial-gradient(
+            ellipse at 20% 50%,
+            rgba(60, 60, 80, 0.15) 0%,
+            rgba(0, 0, 0, 0) 60%
+          ),
+          radial-gradient(
+            ellipse at 80% 30%,
+            rgba(80, 80, 100, 0.08) 0%,
+            rgba(0, 0, 0, 0) 50%
+          );
+        z-index: -2;
+      }
+      /* Animated particles */
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+      }
+      .particle {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        background: rgba(180, 180, 200, 0.6);
+        border-radius: 50%;
+        animation: float 15s infinite linear;
+      }
+      @keyframes float {
+        0% {
+          transform: translateY(100vh);
+          opacity: 0;
+        }
+        10%,
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100px) translateX(50px);
+          opacity: 0;
+        }
+      }
+      .emergency {
+        animation: emergency-flicker 0.1s infinite alternate;
+      }
+      @keyframes emergency-flicker {
+        0% {
+          background: rgba(255, 0, 0, 0.1);
+        }
+        100% {
+          background: rgba(255, 0, 0, 0.3);
+        }
+      }
+      /* Header */
+      .header {
+        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+        padding: 20px;
+        border-bottom: 1px solid #404060;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+      }
+      .logo {
+        font-size: 24px;
+        font-weight: 600;
+        color: #a0a0d0;
+        letter-spacing: 1px;
+      }
+      .status-indicators {
+        display: flex;
+        gap: 20px;
+      }
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(50, 50, 70, 0.3);
+        padding: 8px 15px;
+        border-radius: 8px;
+        border: 1px solid #505070;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+      .status-dot.online {
+        background: #00ff00;
+        box-shadow: 0 0 10px #00ff00;
+      }
+      .status-dot.warning {
+        background: #ffff00;
+        box-shadow: 0 0 10px #ffff00;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      /* Control Panel */
+      .control-panel {
+        background: linear-gradient(135deg, #0a0a15 0%, #15152a 100%);
+        padding: 20px;
+        margin: 20px;
+        border-radius: 8px;
+        border: 1px solid #404060;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+      .control-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .control-btn {
+        background: linear-gradient(135deg, #2a2a40 0%, #35354a 100%);
+        color: #d0d0e0;
+        border: 1px solid #505070;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .control-btn:hover,
+      .control-btn:focus {
+        background: linear-gradient(135deg, #404060 0%, #505070 100%);
+        box-shadow: 0 2px 10px rgba(80, 80, 112, 0.3);
+        transform: translateY(-1px);
+        color: #ffffff;
+        outline: 2px solid #b0b0ff;
+      }
+      .emergency-btn {
+        background: linear-gradient(135deg, #4a1a1a 0%, #6a2a2a 100%);
+        border-color: #8a4a4a;
+        color: #ffcccc;
+      }
+      .emergency-btn:hover,
+      .emergency-btn:focus {
+        background: linear-gradient(135deg, #6a2a2a 0%, #8a4a4a 100%);
+        box-shadow: 0 2px 15px rgba(138, 74, 74, 0.4);
+        color: #ffffff;
+      }
+      @keyframes emergency-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+        }
+      }
+      /* Main Dashboard Grid */
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+        padding: 20px;
+      }
+      .dashboard-panel {
+        background: linear-gradient(
+          135deg,
+          rgba(20, 20, 30, 0.9) 0%,
+          rgba(30, 30, 45, 0.9) 100%
+        );
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #404060;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+      }
+      .panel-title {
+        color: #b0b0d0;
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+
+        position: sticky;
+        top: 0;
+        background: inherit;
+        z-index: 2;
+        padding-top: 10px;
+      }
+      /* ISS Tracker */
+      .iss-tracker {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        background: radial-gradient(circle at center, #0a0a15 0%, #050508 100%);
+        border-radius: 6px;
+        border: 1px solid #404060;
+        overflow: hidden;
+      }
+      .earth {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 80px;
+        height: 80px;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #4a9eff,
+          #1e5799,
+          #0066cc
+        );
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        animation: rotate 10s infinite linear;
+      }
+      .iss {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #f0c040;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(240, 192, 64, 0.6);
+        animation: orbit 8s infinite linear;
+        top: 50%;
+        left: 50%;
+        transform-origin: 0 0;
+      }
+      @keyframes rotate {
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+      @keyframes orbit {
+        0% {
+          transform: translate(-60px, -60px) rotate(0deg) translateX(60px)
+            rotate(0deg);
+        }
+        100% {
+          transform: translate(-60px, -60px) rotate(360deg) translateX(60px)
+            rotate(-360deg);
+        }
+      }
+
+      /* Charts (chart area for Canvas/Chart.js) */
+      .chart-container {
+        width: 100%;
+        height: 150px;
+        position: relative;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        padding: 10px;
+        overflow: hidden;
+        border: 1px solid #303050;
+      }
+      .chart {
+        width: 100%;
+        height: 100%;
+      }
+      /* Data displays */
+      .data-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      .data-item {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 12px;
+        border-radius: 4px;
+        border-left: 2px solid #8080a0;
+      }
+      .data-label {
+        font-size: 11px;
+        color: #909090;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+      }
+      .data-label .tooltip {
+        border-bottom: 1px dashed #aaa;
+        color: #fff;
+        cursor: help;
+      }
+      .data-value {
+        font-size: 15px;
+        font-weight: 600;
+        color: #c0c0e0;
+      }
+      /* Telemetry Stream */
+      .telemetry-stream {
+        height: 150px;
+        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        padding: 12px;
+        font-size: 11px;
+        line-height: 1.5;
+        border: 1px solid #303050;
+        font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+          "Courier New", monospace;
+      }
+      .telemetry-line {
+        margin-bottom: 6px;
+        color: #a0c0a0;
+        animation: fadeIn 0.5s ease-in;
+      }
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      .iss-tracker .globe-stars {
+        pointer-events: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+      }
+      .iss-tracker .globe-stars span {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        filter: blur(1px);
+      }
+      /* Mars Weather */
+      .mars-weather {
+        text-align: center;
+      }
+      .temperature-display {
+        font-size: 32px;
+        font-weight: 600;
+        color: #d08040;
+        margin: 12px 0;
+      }
+      /* Asteroid Tracker */
+      .asteroid-list {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .asteroid-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        margin-bottom: 6px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        border-left: 2px solid #d0a060;
+      }
+      .asteroid-name {
+        font-weight: 500;
+        font-size: 13px;
+      }
+      .asteroid-distance {
+        color: #d0a060;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 768px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+        .control-buttons {
+          flex-direction: column;
+        }
+      }
+      /* Toast */
+      #toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #222;
+        padding: 16px 28px;
+        color: #fff;
+        border-radius: 8px;
+        display: none;
+        box-shadow: 0 0 10px #000;
+        z-index: 2000;
+        font-size: 16px;
+      }
+      /* Accessibility: screen-reader only */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+      @keyframes marquee {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
+      #newsMarquee {
+        color: #ffd700;
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 38px;
+        letter-spacing: 0.3px;
+        text-shadow: 0 1px 3px #000c;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+      #newsMarquee:hover {
+        color: #fff200;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="milky-way-bg"></div>
+    <div class="particles" id="particles"></div>
+
+    <header class="header">
+      <div class="logo" aria-label="Space Mission Control Dashboard">
+        MISSION CONTROL
+      </div>
+      <div class="status-indicators">
+        <div class="status-indicator">
+          <div class="status-dot online"></div>
+          <span>ISS ONLINE</span>
+        </div>
+        <div class="status-indicator">
+          <div class="status-dot warning"></div>
+          <span>MARS LINK</span>
+        </div>
+        <div class="status-indicator">
+          <div class="status-dot online"></div>
+          <span>DEEP SPACE</span>
+        </div>
+      </div>
+      <button
+        id="contrastToggle"
+        class="control-btn"
+        style="margin-left: 10px"
+        aria-label="Toggle high contrast mode"
+        tabindex="0"
+      >
+        🌗 Contrast
+      </button>
+      <div
+        id="newsMarqueeWrap"
+        style="
+          background: #191940;
+          border-bottom: 1px solid #404060;
+          overflow: hidden;
+          height: 38px;
+        "
+      >
+        <div
+          id="newsMarquee"
+          aria-label="Latest Space News"
+          style="
+            white-space: nowrap;
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 28s linear infinite;
+          "
+        ></div>
+      </div>
+    </header>
+
+    <div class="control-panel">
+      <div class="control-buttons">
+        <button
+          class="control-btn"
+          onclick="toggleTracking()"
+          aria-label="Toggle real time ISS tracking"
+          tabindex="0"
+        >
+          🛰️ TOGGLE TRACKING
+        </button>
+        <button
+          class="control-btn"
+          onclick="refreshData()"
+          aria-label="Refresh all panels"
+          tabindex="0"
+        >
+          🔄 REFRESH DATA
+        </button>
+        <button
+          class="control-btn"
+          onclick="calibrateInstruments()"
+          aria-label="Calibrate all mission instruments"
+          tabindex="0"
+        >
+          ⚙️ CALIBRATE
+        </button>
+        <button
+          class="control-btn"
+          onclick="toggleComms()"
+          aria-label="Toggle communication systems"
+          tabindex="0"
+        >
+          📡 COMMS
+        </button>
+        <button
+          class="control-btn"
+          onclick="launchSequence()"
+          aria-label="Initiate launch sequence"
+          tabindex="0"
+        >
+          🚀 LAUNCH
+        </button>
+        <button
+          class="control-btn emergency-btn"
+          onclick="emergencyAlert()"
+          aria-label="Toggle emergency mode"
+          tabindex="0"
+        >
+          🚨 EMERGENCY
+        </button>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- ISS Location Panel -->
+      <div class="dashboard-panel">
+        <h2 class="sr-only">ISS Location Tracker</h2>
+        <div class="panel-title">ISS Location Tracker</div>
+        <div class="iss-tracker">
+          <div class="earth"></div>
+          <div class="iss"></div>
+        </div>
+        <div class="data-grid">
+          <div class="data-item">
+            <div class="data-label">
+              Latitude
+              <span class="tooltip" title="ISS Latitude in decimal degrees"
+                >?</span
+              >
+            </div>
+            <div class="data-value" id="iss-lat">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Longitude
+              <span class="tooltip" title="ISS Longitude in decimal degrees"
+                >?</span
+              >
+            </div>
+            <div class="data-value" id="iss-lng">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Altitude
+              <span class="tooltip" title="Height above Earth's surface (km)"
+                >?</span
+              >
+            </div>
+            <div class="data-value" id="iss-alt">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Velocity
+              <span
+                class="tooltip"
+                title="Speed relative to Earth's surface (km/s)"
+                >?</span
+              >
+            </div>
+            <div class="data-value" id="iss-vel">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Panel -->
+      <div class="dashboard-panel">
+        <h2 class="sr-only">Satellite Telemetry</h2>
+        <div class="panel-title">Satellite Telemetry</div>
+        <div class="chart-container">
+          <canvas class="chart" id="telemetryChart"></canvas>
+        </div>
+        <div class="telemetry-stream" id="telemetryStream"></div>
+      </div>
+
+      <!-- Mars Weather Panel -->
+      <div class="dashboard-panel mars-weather">
+        <h2 class="sr-only">Mars Weather Station</h2>
+        <div class="panel-title">Mars Weather Station</div>
+        <div class="temperature-display" id="marsTemp">--</div>
+        <div class="data-grid">
+          <div class="data-item">
+            <div class="data-label">
+              Pressure
+              <span class="tooltip" title="Atmospheric pressure at surface (Pa)"
+                >?</span
+              >
+            </div>
+            <div class="data-value">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Wind Speed
+              <span class="tooltip" title="Average ground wind speed (m/s)"
+                >?</span
+              >
+            </div>
+            <div class="data-value">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Humidity
+              <span class="tooltip" title="Relative humidity (%)">?</span>
+            </div>
+            <div class="data-value">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              UV Index
+              <span class="tooltip" title="Ultraviolet irradiation index"
+                >?</span
+              >
+            </div>
+            <div class="data-value">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Power Systems Panel (simulated with live chart) -->
+      <div class="dashboard-panel">
+        <h2 class="sr-only">Power Systems</h2>
+        <div class="panel-title">Power Systems</div>
+        <div class="chart-container">
+          <canvas class="chart" id="powerChart"></canvas>
+        </div>
+        <div class="data-grid">
+          <div class="data-item">
+            <div class="data-label">
+              Solar Array Output
+              <span class="tooltip" title="Output power from arrays (kW)"
+                >?</span
+              >
+            </div>
+            <div class="data-value" id="solar-output">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Battery Charge
+              <span class="tooltip" title="Current battery percentage">?</span>
+            </div>
+            <div class="data-value" id="battery-charge">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Asteroid Tracking Panel -->
+      <div class="dashboard-panel">
+        <h2 class="sr-only">Near-Earth Objects</h2>
+        <div class="panel-title">Near-Earth Objects</div>
+        <div class="asteroid-list" id="asteroidList"></div>
+      </div>
+
+      <!-- Communication Panel -->
+      <div class="dashboard-panel">
+        <h2 class="sr-only">Deep Space Network</h2>
+        <div class="panel-title">Deep Space Network</div>
+        <div class="chart-container">
+          <canvas class="chart" id="signalChart"></canvas>
+        </div>
+        <div class="data-grid">
+          <div class="data-item">
+            <div class="data-label">
+              Signal Strength
+              <span class="tooltip" title="Received signal power (dBm)">?</span>
+            </div>
+            <div class="data-value" data-dsn="Signal Strength">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Data Rate
+              <span class="tooltip" title="Current comms data bandwidth (Mbps)"
+                >?</span
+              >
+            </div>
+            <div class="data-value" data-dsn="Data Rate">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Round Trip Time
+              <span class="tooltip" title="One-way signal time (min)">?</span>
+            </div>
+            <div class="data-value" data-dsn="Round Trip Time">--</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">
+              Error Rate
+              <span class="tooltip" title="Bit/frame error rate (%)">?</span>
+            </div>
+            <div class="data-value" data-dsn="Error Rate">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+      // ================= System Setup and Particle Animation =================
+      function createParticles() {
+        const particlesContainer = document.getElementById("particles");
+        for (let i = 0; i < 100; i++) {
+          const particle = document.createElement("div");
+          particle.className = "particle";
+          particle.style.left = Math.random() * 100 + "%";
+          particle.style.animationDelay = Math.random() * 15 + "s";
+          particle.style.animationDuration = Math.random() * 10 + 10 + "s";
+          particlesContainer.appendChild(particle);
+        }
+      }
+
+      // ================ Emergency & Feedback Functions ==================
+      let emergencyMode = false;
+      function emergencyAlert() {
+        emergencyMode = !emergencyMode;
+        if (emergencyMode) {
+          document.body.classList.add("emergency");
+          playAlert();
+          addTelemetryLine("[EMERGENCY] CRITICAL SYSTEM ALERT ACTIVATED!");
+          showToast("Emergency Mode Activated!");
+        } else {
+          document.body.classList.remove("emergency");
+          addTelemetryLine("[NORMAL] Emergency mode deactivated");
+          showToast("Emergency Mode Cleared");
+        }
+      }
+      function playAlert() {
+        // Simple beep alert (Web Audio)
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.frequency.value = 800;
+        gainNode.gain.value = 0.1;
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.5);
+      }
+
+      // ================= Control Panel ========================
+      function toggleTracking() {
+        const issElement = document.querySelector(".iss");
+        if (issElement.style.animationPlayState === "paused") {
+          issElement.style.animationPlayState = "running";
+          addTelemetryLine("[TRACKING] ISS tracking resumed");
+        } else {
+          issElement.style.animationPlayState = "paused";
+          addTelemetryLine("[TRACKING] ISS tracking paused");
+        }
+        showToast("ISS Tracking Toggled");
+      }
+
+      function refreshData() {
+        addTelemetryLine("[SYSTEM] Refreshing all data streams...");
+        updateISSPosition();
+        updateMarsWeather();
+        updateAsteroids();
+        updateDSN();
+        updatePowerChart();
+        updateSignalChart();
+
+        setTimeout(() => {
+          addTelemetryLine("[SYSTEM] Data refresh complete");
+          showToast("All Data Refreshed");
+        }, 900);
+      }
+
+      function calibrateInstruments() {
+        addTelemetryLine("[CALIBRATION] Instrument calibration initiated");
+        showToast("Calibration started");
+        setTimeout(() => {
+          addTelemetryLine(
+            "[CALIBRATION] All instruments calibrated successfully"
+          );
+          showToast("Instruments Calibrated");
+        }, 2000);
+      }
+
+      function toggleComms() {
+        const commStatus = Math.random() > 0.5 ? "ONLINE" : "STANDBY";
+        addTelemetryLine(`[COMMS] Deep Space Network status: ${commStatus}`);
+        showToast("Comms: " + commStatus);
+      }
+
+      function launchSequence() {
+        addTelemetryLine("[LAUNCH] Initiating launch sequence...");
+        showToast("Launch Sequence Started");
+        setTimeout(() => addTelemetryLine("[LAUNCH] T-minus 10 seconds"), 1000);
+        setTimeout(() => addTelemetryLine("[LAUNCH] T-minus 5 seconds"), 2000);
+        setTimeout(() => {
+          addTelemetryLine("[LAUNCH] LIFT OFF! Mission launched successfully");
+          showToast("Lift Off!");
+        }, 3000);
+      }
+      // ================== Toast UI ====================
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.style.display = "block";
+        setTimeout(() => (t.style.display = "none"), 2500);
+      }
+
+      // ================= Telemetry / Status Stream ==============
+      function addTelemetryLine(message) {
+        const stream = document.getElementById("telemetryStream");
+        const line = document.createElement("div");
+        line.className = "telemetry-line";
+        const timestamp = new Date().toLocaleTimeString();
+        line.textContent = `[${timestamp}] ${message}`;
+        stream.insertBefore(line, stream.firstChild);
+        while (stream.children.length > 10) {
+          stream.removeChild(stream.lastChild);
+        }
+      }
+
+      // ================= LIVE API Integrations ===================
+      // --- ISS Location (wheretheiss.at)
+      function updateISSPosition() {
+        document.getElementById("iss-lat").textContent = "Loading...";
+        document.getElementById("iss-lng").textContent = "Loading...";
+        document.getElementById("iss-alt").textContent = "Loading...";
+        document.getElementById("iss-vel").textContent = "Loading...";
+        fetch("https://api.wheretheiss.at/v1/satellites/25544")
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById(
+              "iss-lat"
+            ).textContent = `${data.latitude.toFixed(4)}°`;
+            document.getElementById(
+              "iss-lng"
+            ).textContent = `${data.longitude.toFixed(4)}°`;
+            document.getElementById(
+              "iss-alt"
+            ).textContent = `${data.altitude.toFixed(1)} km`;
+            document.getElementById(
+              "iss-vel"
+            ).textContent = `${data.velocity.toFixed(2)} km/s`;
+            addTelemetryLine(`[ISS] Live position updated`);
+          })
+          .catch(() => {
+            addTelemetryLine(`[ERROR] Unable to fetch ISS data.`);
+          });
+      }
+
+      // --- Mars Weather (MAAS2 API)
+      function updateMarsWeather() {
+        const vals = document.querySelectorAll(".mars-weather .data-value");
+        vals.forEach((el) => (el.textContent = "Loading..."));
+        fetch("https://api.maas2.apollorion.com/")
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById("marsTemp").textContent = data.min_temp
+              ? `${data.min_temp}°C`
+              : "N/A";
+            const d = [
+              {
+                label: "Pressure",
+                value: data.pressure ? `${data.pressure} Pa` : "N/A",
+              },
+              {
+                label: "Wind Speed",
+                value: data.wind_speed ? `${data.wind_speed} m/s` : "N/A",
+              },
+              {
+                label: "Humidity",
+                value: data.abs_humidity ? `${data.abs_humidity}` : "N/A",
+              },
+              {
+                label: "UV Index",
+                value: data.local_uv_irradiance_index || "N/A",
+              },
+            ];
+            vals.forEach((el, i) => {
+              el.textContent = d[i]?.value;
+            });
+            addTelemetryLine("[MARS] Weather updated");
+          })
+          .catch(() => {
+            addTelemetryLine("[ERROR] Mars Weather API offline.");
+          });
+      }
+
+      // --- Asteroids (NASA NEO API)
+      function updateAsteroids() {
+        const apiKey = "WXIAF4dMplV0aLPXnvYSlg5UuMdfSFcA1750qqL4";
+        const list = document.getElementById("asteroidList");
+        list.innerHTML =
+          '<div style="color:#aaa;text-align:center;padding:3px;">Loading...</div>';
+        fetch(`https://api.nasa.gov/neo/rest/v1/feed?api_key=${apiKey}`)
+          .then((res) => res.json())
+          .then((data) => {
+            list.innerHTML = "";
+            const today = Object.keys(data.near_earth_objects)[0];
+            if (!today || !data.near_earth_objects[today]) throw "";
+            const asteroids = data.near_earth_objects[today]
+              .slice(0, 4)
+              .map((a) => ({
+                name: a.name,
+                distance: Number(
+                  a.close_approach_data[0].miss_distance.astronomical
+                ).toFixed(3),
+              }));
+            asteroids.forEach((a) => {
+              const item = document.createElement("div");
+              item.className = "asteroid-item";
+              item.innerHTML = `<span class="asteroid-name">${a.name}</span>
+                                                <span class="asteroid-distance">${a.distance} AU</span>`;
+              list.appendChild(item);
+            });
+            addTelemetryLine("[ASTEROID] Near-Earth objects updated");
+          })
+          .catch(() => {
+            list.innerHTML =
+              '<div style="color:orange;text-align:center">Asteroid feed unavailable</div>';
+            addTelemetryLine("[ERROR] Asteroid API error.");
+          });
+      }
+
+      // --- Deep Space Network (NASA DSN Now API)
+      function updateDSN() {
+        const dsnFields = [
+          "Signal Strength",
+          "Data Rate",
+          "Round Trip Time",
+          "Error Rate",
+        ];
+        document
+          .querySelectorAll("[data-dsn]")
+          .forEach((e) => (e.textContent = "Loading..."));
+        fetch("https://eyes.nasa.gov/dsn/api/status")
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.dscc) throw "";
+            let found = false;
+            for (const station of Object.values(data.dscc)) {
+              for (const linkType of ["downlink", "uplink"]) {
+                if (station[linkType]?.length) {
+                  for (const s of station[linkType][0]?.spacecraft || []) {
+                    document.querySelector(
+                      '[data-dsn="Signal Strength"]'
+                    ).textContent = `${
+                      s.signal_strength !== undefined ? s.signal_strength : "--"
+                    } dBm`;
+                    document.querySelector(
+                      '[data-dsn="Data Rate"]'
+                    ).textContent = `${
+                      s.data_rate !== undefined ? s.data_rate : "--"
+                    } Mbps`;
+                    document.querySelector(
+                      '[data-dsn="Round Trip Time"]'
+                    ).textContent = `${
+                      s.rtlt_min !== undefined ? s.rtlt_min : "--"
+                    } min`;
+                    document.querySelector(
+                      '[data-dsn="Error Rate"]'
+                    ).textContent = `${
+                      s.frame_error_rate !== undefined
+                        ? s.frame_error_rate
+                        : "0"
+                    }%`;
+                    found = true;
+                    break;
+                  }
+                }
+              }
+              if (found) break;
+            }
+            if (!found) {
+              document
+                .querySelectorAll("[data-dsn]")
+                .forEach((e) => (e.textContent = "--"));
+            }
+            addTelemetryLine("[DSN] Deep Space Network status updated");
+          })
+          .catch(() => {
+            document
+              .querySelectorAll("[data-dsn]")
+              .forEach((e) => (e.textContent = "N/A"));
+            addTelemetryLine("[ERROR] DSN API offline.");
+          });
+      }
+      // ================= Chart.js Charts for Telemetry/Power/Signal ====================
+      let telemetryChart, powerChart, signalChart;
+      function setupCharts() {
+        telemetryChart = new Chart(
+          document.getElementById("telemetryChart").getContext("2d"),
+          {
+            type: "line",
+            data: {
+              labels: Array.from({ length: 20 }, (_, i) => i),
+              datasets: [
+                {
+                  label: "Telemetry Value",
+                  backgroundColor: "rgba(0,255,255,0.2)",
+                  borderColor: "#00eeee",
+                  data: Array.from({ length: 20 }, () =>
+                    Math.floor(Math.random() * 100)
+                  ),
+                  tension: 0.4,
+                  fill: true,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+            },
+          }
+        );
+        powerChart = new Chart(
+          document.getElementById("powerChart").getContext("2d"),
+          {
+            type: "line",
+            data: {
+              labels: Array.from({ length: 12 }, (_, i) => i),
+              datasets: [
+                {
+                  label: "Solar Array Output",
+                  backgroundColor: "rgba(255,236,105,0.15)",
+                  borderColor: "#ffd700",
+                  data: Array.from(
+                    { length: 12 },
+                    () => 84 + Math.random() * 6
+                  ),
+                  tension: 0.4,
+                  fill: true,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+            },
+          }
+        );
+        signalChart = new Chart(
+          document.getElementById("signalChart").getContext("2d"),
+          {
+            type: "line",
+            data: {
+              labels: Array.from({ length: 15 }, (_, i) => i),
+              datasets: [
+                {
+                  label: "DSN Signal",
+                  backgroundColor: "rgba(100,200,255,0.11)",
+                  borderColor: "#40a0ff",
+                  data: Array.from(
+                    { length: 15 },
+                    () => -145 + Math.random() * 8
+                  ),
+                  tension: 0.5,
+                  fill: true,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+            },
+          }
+        );
+      }
+      function updateTelemetryChart() {
+        if (!telemetryChart) return;
+        telemetryChart.data.datasets[0].data.shift();
+        telemetryChart.data.datasets[0].data.push(80 + Math.random() * 20);
+        telemetryChart.update();
+      }
+      function updatePowerChart() {
+        if (!powerChart) return;
+        powerChart.data.datasets[0].data = Array.from(
+          { length: 12 },
+          () => 82 + Math.random() * 9
+        );
+        document.getElementById(
+          "solar-output"
+        ).textContent = `${powerChart.data.datasets[0].data
+          .slice(-1)[0]
+          .toFixed(1)} kW`;
+        document.getElementById("battery-charge").textContent =
+          (95 + Math.random() * 5).toFixed(1) + "%";
+        powerChart.update();
+      }
+      function updateSignalChart() {
+        if (!signalChart) return;
+        signalChart.data.datasets[0].data = Array.from(
+          { length: 15 },
+          () => -142 + Math.random() * 6
+        );
+        signalChart.update();
+      }
+      // ====================== Accessibility & Theme =====================
+      document.getElementById("contrastToggle").onclick = function () {
+        document.body.classList.toggle("high-contrast");
+        showToast(
+          "High Contrast " +
+            (document.body.classList.contains("high-contrast") ? "On" : "Off")
+        );
+      };
+      // =================== Dashboard Initialization (onLoad) ===============
+      function init() {
+        createParticles();
+        setupCharts();
+        updateISSPosition();
+        updateMarsWeather();
+        updateAsteroids();
+        updateDSN();
+        updatePowerChart();
+        updateSignalChart();
+        fetchSpaceNews();
+
+        // Simulated stream messages
+        setInterval(() => {
+          if (Math.random() > 0.7) {
+            const messages = [
+              "Orbital mechanics nominal",
+              "Solar panel efficiency at 94%",
+              "Attitude control systems stable",
+              "Communications array aligned",
+              "Thermal management optimal",
+              "Navigation systems updated",
+            ];
+            addTelemetryLine(
+              `[AUTO] ${messages[Math.floor(Math.random() * messages.length)]}`
+            );
+          }
+          updateTelemetryChart();
+        }, 3300);
+
+        setInterval(updateISSPosition, 15000);
+        setInterval(updateMarsWeather, 30000);
+        setInterval(updateAsteroids, 120000);
+        setInterval(updateDSN, 30000);
+        setInterval(updatePowerChart, 25000);
+        setInterval(updateSignalChart, 20000);
+
+        // Initial sample telemetry
+        addTelemetryLine("SAT-01: Battery 98% | Temp 12°C");
+        addTelemetryLine("SAT-02: Solar Array Deployed");
+        addTelemetryLine("SAT-03: Attitude Nominal");
+      }
+      window.addEventListener("load", init);
+      function fetchSpaceNews() {
+        // Using Spaceflight News API (top headlines of the last 48 hours)
+        fetch(
+          "https://api.spaceflightnewsapi.net/v4/articles/?limit=6&published_at__gte=" +
+            new Date(Date.now() - 3 * 24 * 3600 * 1000)
+              .toISOString()
+              .split("T")[0]
+        )
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.results || !data.results.length) throw "";
+            // Join top stories as bullet-separated scrolling text
+            const news = data.results
+              .map(
+                (a) =>
+                  `<a href="${a.url}" target="_blank" style="color:#ffd700;text-decoration:underline;margin-right:30px;">${a.title}</a>`
+              )
+              .join(" • ");
+            const marquee = document.getElementById("newsMarquee");
+            marquee.innerHTML = "🚨 Latest Space News:&nbsp; " + news;
+          })
+          .catch(() => {
+            document.getElementById("newsMarquee").textContent =
+              "⏳ Space news feed unavailable.";
+          });
+      }
+      // Re-fetch news every 25 minutes
+      setInterval(fetchSpaceNews, 1500000);
+    </script>
+  </body>
+</html>
